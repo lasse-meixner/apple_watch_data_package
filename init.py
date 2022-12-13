@@ -1,0 +1,1 @@
+print("Use XML Parser Class methods create_csv() to create a csv and load_csv() to load it into a pd.DataFrame.\nSource:https://github.com/jameno/Simple-Apple-Health-XML-to-CSV")
