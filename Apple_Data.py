@@ -21,7 +21,6 @@ def add_date_variables(data):
     data["weekday"] = data["start"].dt.weekday
     data["day"] = data["start"].dt.day
     data["hour"] = data["start"].dt.hour
-
     return data
 
 def light_preprocess(data):
@@ -203,6 +202,14 @@ def get_daily_heartrate_stats(data):
 
 
 def get_heartrate_data(data):
+    """auxiliary function for get_daily_heartrate_stats
+
+    Args:
+        data (df): df
+
+    Returns:
+        df: df
+    """
     hr = data[data["type"] == "HeartRate"].sort_values("start")
     hr["off_wrist"] = hr.start.diff(1).dt.total_seconds()/3600
     hr["first_on_wrist"] = ((hr["off_wrist"] > 5) & (

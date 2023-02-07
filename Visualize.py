@@ -1,14 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
+import pandas as pd
 
-def plot_time(data,column):
-    ss = data.query("type==@column")
-    
-    f = plt.figure(figsize=(16,10))
-    plt.plot_date(x=ss.start,y=ss.value)
-    plt.title(column)
-    plt.show()
 
 def plot_weekday(data,column,kind=None,agg_first=False, aggfunc="mean"):
     ss = data.query("type==@column")
