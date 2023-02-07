@@ -1,7 +1,0 @@
-__pycache__/
-*.code-workspace
-.ipynb_checkpoints
-example/
-notebooks/
-.gitignore
-questions.txt
