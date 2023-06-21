@@ -50,11 +50,7 @@ def fill_stand_time(data):
     This function fills these gaps with zero values.
     """
     stand_time = data[data["type"] == "AppleStandTime"].sort_values("start").reset_index()
-<<<<<<< HEAD
     # loop over start intervals, if it is more than 5 minutes after the previous interval, and the watch has been worn (indicated by presence of heart rate measurements), add all missing 5min intervals
-=======
-    # loop over start intervals, if it is more than 5 minutes after the previous interval, add all missing 5min intervals
->>>>>>> 50d1f3f (docstring and fixes)
     missing_entries = pd.DataFrame()
     for i, row in stand_time.iterrows():
         if i == 0:
