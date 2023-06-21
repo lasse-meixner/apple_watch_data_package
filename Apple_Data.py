@@ -15,7 +15,7 @@ def add_date_variables(data):
 
     data["start"] = pd.to_datetime(data.startDate)
     data["end"] = pd.to_datetime(data.endDate)
-    data["date"] = data["start"].dt.date
+    data["day_date"] = data["start"].dt.date
     data["time"] = data["start"].dt.time
     data["week"] = data["start"].dt.week
     data["weekday"] = data["start"].dt.weekday
@@ -23,15 +23,53 @@ def add_date_variables(data):
     data["hour"] = data["start"].dt.hour
     return data
 
-def light_preprocess(data):
-    data = data.dropna(axis=1, how="all")
+def light_preprocess(raw):
+    """Function that takes in the raw data and:
+        - drops columns that are NA for all rows
+        - type casting
+
+    Args:
+        data (df): (raw) Apple Health Data
+
+    Returns:
+        df: df
+    """
+    raw = raw.dropna(axis=1, how="all")
     # add empty rows (missing dates) and add time variables
-    data = add_date_variables(data)
+    raw = add_date_variables(raw)
     # force numeric values
-    data["value"] = pd.to_numeric(data["value"], errors="coerce")
+    raw["value"] = pd.to_numeric(raw["value"], errors="coerce")
     # filter for sourceName where the source contains the substring "Apple Watch"
-    data = data[data["sourceName"].str.contains("Watch",regex=False)]
-    return data
+    raw = raw[raw["sourceName"].str.contains("Watch",regex=False)]
+    return raw
+
+def fill_stand_time(data):
+    """ 
+    AppleStandTime is reported in 5 minute windows, for which the standing minutes are recorded.
+    If the user does not stand at all, instead of reporting zero, no entry is made.
+    This function fills these gaps with zero values.
+    """
+    stand_time = data[data["type"] == "AppleStandTime"].sort_values("start").reset_index()
+    # loop over start intervals, if it is more than 5 minutes after the previous interval, and the watch has been worn (indicated by presence of heart rate measurements), add all missing 5min intervals
+    missing_entries = pd.DataFrame()
+    for i, row in stand_time.iterrows():
+        if i == 0:
+            continue
+        if (row["start"] - stand_time.loc[i-1, "start"]).total_seconds() > 300:
+            # check if there is at least 5 (minute) heart rate entries in the interval
+            if data[(data["start"] > stand_time.loc[i-1, "start"]) & (data["end"]<stand_time.loc[i, "start"]) & (data["type"]=="HeartRate")].count()["value"] < 5:
+                continue
+            else:
+                # get all missing 5 minute intervals
+                missing_intervals = pd.date_range(
+                    stand_time.loc[i-1, "start"], row["start"], freq="5min")[1:]
+                missing_df = pd.DataFrame(
+                    {"type": "AppleStandTime", "value": 0, "start": missing_intervals, "end": missing_intervals + pd.Timedelta(minutes=5)})
+                # concat to missing entries
+                missing_entries = pd.concat([missing_entries, missing_df])
+
+    return data.append(missing_entries)
+
 
 
 
@@ -124,7 +162,7 @@ def modify_HK_units(data):
     return data
 
 
-def preprocess(data, drop=False, set_start_index=False):
+def preprocess(raw, drop=False, set_start_index=False):
     """
     1) Drop empty columns 
     2) adds date variables (including day and hour)
@@ -132,29 +170,30 @@ def preprocess(data, drop=False, set_start_index=False):
     4) modifies units (drops the units so columns are numerical)
 
     Args:
-        data (df): original data
+        data (df): raw data
         drop (bool, optional): Whether to drop "redundant" columns. Defaults to False.
         set_start_index (bool, optional): Whether to set start as indices. Defaults to False.
 
     Returns:
         data: modified original dataframe
     """
-    data = data.dropna(axis=1, how="all")
+    raw = raw.dropna(axis=1, how="all")
     if drop:
         # the list needs to be updated
-        data.drop(axis=1, labels=redundant, inplace=True)
+        raw.drop(axis=1, labels=redundant, inplace=True)
     # add empty rows (missing dates) and add time variables
-    data = add_date_variables(data)
+    raw = add_date_variables(raw)
     # set start and end as index
-    data = add_workout_variables(data)
+    raw = add_workout_variables(raw)
     # modify units
-    data = modify_HK_units(data)
+    raw = modify_HK_units(raw)
     # force numeric values
-    data["value"] = pd.to_numeric(data["value"], errors="coerce")
+    raw["value"] = pd.to_numeric(raw["value"], errors="coerce")
     # potentially change index
     if set_start_index:
-        data = data.set_index(["start"])
-    return data
+        raw = raw.set_index(["start"])
+    return raw
+    
 
 
 def select_period(data, start, end):

@@ -123,8 +123,8 @@ def save_to_csv(health_df):
     print("Saving CSV file...", end="")
     sys.stdout.flush()
 
-    today = dt.datetime.now().strftime('%Y-%m-%d')
-    health_df.to_csv("apple_health_export_" + today + ".csv", index=False)
+    #today = dt.datetime.now().strftime('%Y-%m-%d')
+    health_df.to_csv("apple_health_export.csv", index=False)
     print("done!")
 
     return
