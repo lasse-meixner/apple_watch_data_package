@@ -13,8 +13,8 @@ def add_date_variables(data):
             f"Dropping {data.startDate.isna().sum()} entries with missing time")
         data.dropna(subset=["startDate"], inplace=True)
 
-    data["start"] = pd.to_datetime(data.startDate).tz_localize(None)
-    data["end"] = pd.to_datetime(data.endDate).tz_localize(None)
+    data["start"] = pd.to_datetime(data.startDate).dt.tz_localize(None)
+    data["end"] = pd.to_datetime(data.endDate).dt.tz_localize(None)
     data["day_date"] = data["start"].dt.date
     data["time"] = data["start"].dt.time
     data["week"] = data["start"].dt.week
